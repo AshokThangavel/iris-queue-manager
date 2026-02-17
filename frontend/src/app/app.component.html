@@ -1,0 +1,21 @@
+<div class="dashboard-wrapper">
+  <nav class="sidebar">
+    <div class="logo">IRIS %ZQueue Mgr</div>
+    <ul class="nav-links">
+      <li><a routerLink="/queue" routerLinkActive="active">Active Queue</a></li>
+      <li><a routerLink="/history" routerLinkActive="active">History</a></li>
+      <li><a routerLink="/deadletter" routerLinkActive="active">Dead Letter</a></li>
+      <li><a routerLink="/create" routerLinkActive="active">New Task</a></li>
+    </ul>
+  </nav>
+
+  <main class="content">
+    <header class="top-bar">
+      <h1>%ZQueue.Manager</h1>
+      <!--span class="server-status">Connected to IRIS</span-->
+    </header>
+    <div class="view-container">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

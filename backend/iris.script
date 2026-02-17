@@ -1,0 +1,9 @@
+ZN "%SYS"
+    Do ##class(Security.Users).UnExpireUserPasswords("*")
+    ZN "USER"
+    ; This path must exist INSIDE the image during the build
+    zpm "load /home/irisowner/dev/ -v":1
+    do ##class(%ZQueue.Manager).CreateWQMCategory()
+    do ##class(%ZQueue.UnitTest).TestSingleQueue(),##class(%ZQueue.UnitTest).TestBulkEnqueue()
+    ;set pid = ##class(%ZQueue.Manager).Start()
+    halt

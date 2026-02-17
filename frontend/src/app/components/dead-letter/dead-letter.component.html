@@ -1,0 +1,64 @@
+<div class="card">
+    <div class="header-row">
+        <h2>Dead Letter Queue</h2>
+
+        <div class="search-container">
+            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilter()"
+                placeholder="Search ID, Error, or Info..." class="search-input">
+            <span class="search-count">{{filteredItems.length}} items found</span>
+        </div>
+
+        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedIds.size === 0">
+            Delete Selected ({{selectedIds.size}})
+        </button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th><input type="checkbox" (change)="toggleAll($event)"></th>
+                <th>ID</th>
+                <th>Execution Info</th>
+                <th>Last Error</th>
+                <th>Failed At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let item of filteredItems">
+                <td>
+                    <input type="checkbox" [checked]="selectedIds.has(item.id)" (change)="toggleSelection(item.id)">
+                </td>
+                <td>#{{item.id}}</td>
+                <td><span class="badge Failed">{{item.executionInfo}}</span></td>
+
+                <td class="error-cell">
+                    <div class="truncate-wrapper">
+                        {{item.lastError}}
+                        <span class="tooltip-box">
+                            <strong>Full Error Detail:</strong><br>
+                            {{item.lastError}}
+                        </span>
+                    </div>
+                </td>
+
+                <td>{{item.failedAt}}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="icon-btn retry" (click)="retrySingle(item.id)"
+                            title="Retry / Send back to Queue">
+                            🔄
+                        </button>
+                        <button class="icon-btn delete" (click)="deleteSingle(item.id)" title="Delete">
+                            🗑️
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div *ngIf="filteredItems.length === 0 && !loading" class="empty-state">
+        <p>No dead letter records found matching your criteria.</p>
+    </div>
+</div>

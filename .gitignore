@@ -1,42 +1,32 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
-
-# Node
-/node_modules
+# --- Angular / Frontend ---
+**/node_modules/
+**/dist/
+**/.angular/
+**/tmp/
+**/out-tsc/
+**/.sass-cache/
+**/coverage/
 npm-debug.log
 yarn-error.log
 
-# IDEs and editors
+# --- InterSystems IRIS / Backend ---
+# Ignore the Durable %SYS / Data volume folder
+# This matches the 'iris-data' folder we tried earlier
+iris-data/
+*.log
+*.lck
+*.obj
+*.vcp
+build.log
+
+# --- Docker ---
+.docker/
+# If you use environment variable files
+.env
+
+# --- IDEs & System ---
+.vscode/
 .idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.history/*
-
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-
-# System files
 .DS_Store
 Thumbs.db
+*.history

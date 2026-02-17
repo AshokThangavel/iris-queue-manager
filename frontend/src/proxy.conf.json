@@ -1,0 +1,6 @@
+{
+    "/api": {
+        "target": "http://iris-server:52773",
+        "secure": false
+    }
+}

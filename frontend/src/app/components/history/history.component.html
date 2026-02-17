@@ -1,0 +1,40 @@
+<div class="card">
+    <div class="header-row">
+        <h2>Processed History</h2>
+        <div class="search-container">
+            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilter()"
+                placeholder="Search ID, Info, or Date..." class="search-input">
+            <!--span class="search-count">{{filteredItems.length}} matches</span-->
+        </div>
+        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedIds.size === 0">
+            Purge Selected ({{selectedIds.size}})
+        </button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th><input type="checkbox" (change)="toggleAll($event)"></th>
+                <th>ID</th>
+                <th>Execution Info</th>
+                <th>Completed At</th>
+                <th>Duration</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let item of filteredItems">
+                <td>
+                    <input type="checkbox" [checked]="selectedIds.has(item.id)" (change)="toggleSelection(item.id)">
+                </td>
+                <td>#{{item.id}}</td>
+                <td><span class="badge Completed">{{item.executionInfo}}</span></td>
+                <td>{{item.completedTime}}</td>
+                <td>{{item.duration}}s</td>
+                <td>
+                    <button class="icon-btn delete" (click)="deleteSingle(item.id)">🗑️</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,56 @@
+<div class="card">
+    <div class="header-row">
+        <h2>Active Queue</h2>
+
+        <div class="search-container">
+            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilter()"
+                placeholder="Search ID, Status, or target execution..." class="search-input">
+            <span class="search-count">{{filteredItems.length}} items found</span>
+        </div>
+
+        <div class="actions">
+            <button class="btn-refresh" (click)="loadQueue()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Priority</th>
+                <th>Target Execution</th>
+                <th>Status</th>
+                <th>Next Run</th>
+                <th>Error</th>
+                <!--th>Actions</th-->
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let item of filteredItems">
+                <td>#{{item.id}}</td>
+                <td>{{item.priority}}</td>
+                <td class="info-cell">
+                    <div class="truncate-wrapper">
+                        {{item.executionInfo}}
+                        <span class="tooltip-box">
+                            <strong>Full Execution Info:</strong><br>
+                            {{item.executionInfo}}
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge" [ngClass]="item.status">{{item.status}}</span>
+                </td>
+                <td>{{item.nextRun}}</td>
+                <td>{{item.error || 'None'}}</td>
+                <!--td>
+                    <button class="icon-btn delete" (click)="deleteSingle(item.id)">🗑️</button>
+                </td-->
+            </tr>
+        </tbody>
+    </table>
+
+    <div *ngIf="filteredItems.length === 0 && !loading" class="empty-state">
+        <p>Queue is currently empty.</p>
+    </div>
+</div>
