@@ -303,7 +303,6 @@ ClassMethod GetQueueStatus()
 		 If status {
 			Set response.pid = status
 		 }
-		 Set ^zaxk.dd = response.%ToJSON()
 	}
 	Catch ex {
 		Set response = ..GetErrorResponse(..GetErrorText(ex))

@@ -83,7 +83,6 @@ Method GetNextRetryDelay() [ Final, Private ]
 	Set time = $ListGet(delays,currentRetry)
 	Set min = $ListGet(time)
 	Set max = $ListGet(time,2)
-	Set ^zaaa(1) = min_","_max_","_currentRetry
 	Set minTime = $Random(min)
 
 	Set diff = max - min + 1
