@@ -1,27 +1,118 @@
-# QueueManager
+# %ZQueue Management System
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.8.
+A robust, process-based queue manager designed for asynchronous task execution. This system ensures high availability by decoupling task submission from processing.
 
-## Development server
+## 🚀 Overview
+The system utilizes a producer-consumer architecture to manage background jobs. It is designed to handle high-volume entries with built-in persistence, ensuring that no data is lost even if the process is interrupted.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+Here’s the corrected version with clearer wording and formatting:
 
-## Code scaffolding
+> **Note:** Connect to IRIS.
+> Start an IRIS session:
+>
+> ```
+> iris session iris
+> ```
+>
+> Once Docker is up, start the queue:
+>
+> ```objectscript
+> Write ##class(%ZQueue.Manager).Start()
+> ```
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-## Build
+### Key Features
+* **Persistence:** Data survives system or process restarts.
+* **Traceability:** Every job is linked to a specific Process ID for monitoring.
+* **Efficiency:** Offloads heavy tasks to keep the main application responsive.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-## Running unit tests
+## 🛠 Usage
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Use the following methods to control the lifecycle of the queue background process.
+## ⚙️ Installation
 
-## Running end-to-end tests
+### Clone the Repository
+```bash
+git clone https://github.com/AshokThangavel/iris-queue-manager.git
+cd iris-queue-manager
+````
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+### Running the Application with Docker
 
-## Further help
+Build and start the app using Docker Compose:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+docker-compose up --build
+```
+
+### Stopping the Application
+
+To stop and remove the running containers:
+
+```bash
+docker-compose down
+```
+In your **README.md**, the "Usage" section explains how a developer actually interacts with the project once the Docker containers are running.
+
+Here is a clear breakdown you can use to explain these two endpoints:
+
+
+### 🖥️ Usage & Access Points
+
+Once the project is started, you can access the different layers of the application via these URLs:
+
+#### **1. Frontend Interface (Angular)**
+
+* **URL:** [http://localhost:8080](http://localhost:8080/)
+* **What it is:** This is the user-facing dashboard.
+
+#### **2. Backend Management (InterSystems IRIS)**
+
+* **URL:** [http://localhost:52773/csp/sys/UtilHome.csp](http://localhost:52773/csp/sys/UtilHome.csp)
+* **What it is:** The **Management Portal** for the InterSystems IRIS database.
+  
+### Start the Queue
+To initiate the background worker and begin processing entries, run:
+
+```objectscript
+Write ##class(%ZQueue.Manager).Start()
+
+```
+
+* **Output:** This returns the **Process ID (PID)** of the newly created background job.
+* **Behavior:** Once started, the manager will immediately begin processing any pending entries in the queue.
+
+### Check Queue is running
+
+```objectscript
+Write ##class(%ZQueue.Manager).IsQueueRunning()
+```
+
+### Stop the Queue
+
+To gracefully shut down the background worker, run:
+
+```objectscript
+Write ##class(%ZQueue.Manager).Stop()
+
+```
+
+
+* **Behavior:** This command stops the active queue process.
+* **Important Note:** Stopping the process **does not delete** the entries in the queue.
+* **Resuming:** Once you call the `.Start()` method again, the manager will resume processing the existing entries from where it left off.
+
+---
+
+Here’s the corrected and polished version:
+
+## 📊 Screen Workflow Logic
+
+1. **New Task:** The task is validated and stored in the queue.
+2. **Active Queue:** View the current queue details.
+3. **History:** Upon successful execution, the task is marked as complete and moved to History.
+4. **Dead Letter:** Upon execution failure, the task is moved to the Dead Letter queue.
+
+<img width="1894" height="1016" alt="image" src="https://github.com/user-attachments/assets/b349d238-8775-4c18-83be-6620482decdc" />
+
