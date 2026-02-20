@@ -7,18 +7,23 @@ The system utilizes a producer-consumer architecture to manage background jobs. 
 
 Here’s the corrected version with clearer wording and formatting:
 
-> **Note:** Connect to IRIS.
-> Start an IRIS session:
+
+> **Note:**
 >
-> ```
+> 1. Click the **Start Queue** button in the Angular application.
+> 2. Ensure Docker is running and connect to **InterSystems IRIS**.
+> 3. Start an IRIS session:
+>
+> ```bash
 > iris session iris
 > ```
 >
-> Once Docker is up, start the queue:
+> 4. Once connected (and Docker is up), start the queue:
 >
 > ```objectscript
 > Write ##class(%ZQueue.Manager).Start()
 > ```
+
 
 
 ### Key Features
@@ -114,5 +119,6 @@ Here’s the corrected and polished version:
 3. **History:** Upon successful execution, the task is marked as complete and moved to History.
 4. **Dead Letter:** Upon execution failure, the task is moved to the Dead Letter queue.
 
-<img width="1894" height="1016" alt="image" src="https://github.com/user-attachments/assets/b349d238-8775-4c18-83be-6620482decdc" />
+<img width="1890" height="1002" alt="image" src="https://github.com/user-attachments/assets/82d2eeb7-e801-46ab-b53d-af2f059307e5" />
+
 
