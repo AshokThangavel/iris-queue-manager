@@ -6,7 +6,7 @@ Parameter HandleCorsRequest = 1;
 XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 {
 <Routes>
-
+<Route Url="/item" Method="POST" Call="CreateItem" Cors="true"/>
 <Route Url="/items/dlq" Method="GET" Call="GetDLQItems" Cors="true"/>
 <Route Url="/items/dlq/bulk-delete" Method="POST" Call="DeleteDeadLetterItems" Cors="true"/>
 <Route Url="/items/history/bulk-delete" Method="POST" Call="DeleteHistoryItems" Cors="true"/>
@@ -19,7 +19,9 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/items" Method="GET" Call="GetItems" Cors="true"/>
 <Route Url="/item/:id" Method="DELETE" Call="DeleteItem"/>
 <Route Url="/items/bulk-delete" Method="POST" Call="BulkDelete"/>
-<Route Url="/item" Method="POST" Call="CreateItem"/>
+<Route Url="/queue/status" Method="GET" Call="GetQueueStatus"/>
+<Route Url="/queue/start" Method="POST" Call="StartQueue"/>
+<Route Url="/queue/stop" Method="POST" Call="StopQueue"/>
 
 </Routes>
 }
@@ -158,7 +160,7 @@ ClassMethod DeleteHistoryItems()
 {
 	#define ThrowGeneral(%msg) Throw ##class(%Exception.General).%New(%msg)
 	Try{
-	Set payload = ..GetContent()
+		Set payload = ..GetContent()
 		If '$IsObject(payload) {
 			$$$ThrowGeneral("payload is empty")
 		}
@@ -167,7 +169,7 @@ ClassMethod DeleteHistoryItems()
 		}
 		Set iter = payload.ids.%GetIterator()
 		While iter.%GetNext(,.id) {
-			Do ##Class(%ZQueue.QueueHistory).DeleteById(id)
+			Do ##Class(%ZQueue.QueueHistory).DeleteByQueueId(id)
 		}
 		Set response = ..GetStatusOk()
 	}
@@ -256,6 +258,52 @@ ClassMethod CreateItem() As %Status
 		$$$ThrowOnError(status)
 		Do ..SetStatusCode(200)
 		Set response = {"status":"ok","message":("QueueId "_QueueId)}
+	}
+	Catch ex {
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
+		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
+	}
+	Do ..WriteResponse(response)
+	Return $$$OK
+}
+
+ClassMethod StartQueue()
+{
+	Try {
+		Do ##class(%ZQueue.Manager).Start()
+		Set response = ..GetStatusOk()
+	}
+	Catch ex {
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
+		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
+	}
+	Do ..WriteResponse(response)
+	Return $$$OK
+}
+
+ClassMethod StopQueue()
+{
+	Try {
+		Do ##class(%ZQueue.Manager).Stop()
+		Set response = ..GetStatusOk()
+	}
+	Catch ex {
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
+		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
+	}
+	Do ..WriteResponse(response)
+	Return $$$OK
+}
+
+ClassMethod GetQueueStatus()
+{
+	Try {
+		Set status = ##class(%ZQueue.Manager).IsQueueRunning()
+		Set response = {"running":($Select(status:1,1:0))}
+		 If status {
+			Set response.pid = status
+		 }
+		 Set ^zaxk.dd = response.%ToJSON()
 	}
 	Catch ex {
 		Set response = ..GetErrorResponse(..GetErrorText(ex))

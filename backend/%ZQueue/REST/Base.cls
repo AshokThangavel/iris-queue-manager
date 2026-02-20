@@ -41,9 +41,10 @@ ClassMethod GetContent()
 {
     #dim %request As %CSP.Request
 
-    If %request.Content=..#CONTENTTYPEJSON {
+    If %request.ContentType=..#CONTENTTYPEJSON {
         Set content = {}.%FromJSON(%request.Content)
-    } Else  {
+    }
+    Else {
         Set content = %request.Content
     }
     Return content
@@ -72,10 +73,9 @@ ClassMethod OnHandleCorsRequest(pUrl As %String) As %Status
     Do ..SetResponseHeader("Access-Control-Allow-Headers","Origin, Content-Type, Accept, Authorization")
     If %request.Method = "OPTIONS" {
         Set %response.Status = "200"
-        Quit $$$OK
+        Return $$$OK
     }
-
-    Quit $$$OK
+    Return $$$OK
 }
 
 }

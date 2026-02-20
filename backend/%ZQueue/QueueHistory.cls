@@ -27,6 +27,11 @@ ClassMethod DeleteById(pId As %Integer) [ CodeMode = expression ]
 ..%DeleteId(pId)
 }
 
+ClassMethod DeleteByQueueId(pId As %Integer)
+{
+	&SQL(DELETE %ZQueue.QueueHistory WHERE OriginalID = :pId)
+}
+
 /// Beaware before executing this method
 /// Not recommended to run
 ClassMethod DeleteAllRecords(pId As %Integer) [ Internal ]

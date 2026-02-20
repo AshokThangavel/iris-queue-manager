@@ -1,7 +1,14 @@
 <div class="card">
     <div class="header-row">
-        <h2>Active Queue</h2>
-
+        <div class="title-group">
+            <h2>Active Queue</h2>
+            <!--div class="status-badge" [ngClass]="isQueueRunning ? 'status-running' : 'status-stopped'">
+                <span class="indicator"></span>
+                <span class="status-text">
+                    {{ isQueueRunning ? 'Running (PID: ' + queuePid + ')' : 'Queue Stopped' }}
+                </span>
+            </div-->
+        </div>
         <div class="search-container">
             <input type="text" [(ngModel)]="searchTerm" (input)="applyFilter()"
                 placeholder="Search ID, Status, or target execution..." class="search-input">
@@ -9,48 +16,70 @@
         </div>
 
         <div class="actions">
-            <button class="btn-refresh" (click)="loadQueue()">🔄 Refresh</button>
+            <button *ngIf="!isQueueRunning" class="btn-control btn-start" (click)="startQueue()" [disabled]="loading">
+                ▶ Start Queue
+            </button>
+
+            <button *ngIf="isQueueRunning" class="btn-control btn-stop" (click)="stopQueue()" [disabled]="loading">
+                ⏹ Stop Queue
+            </button>
+
+            <button class="btn-refresh" (click)="loadQueue()" [disabled]="loading">
+                <span [class.spinning]="loading">🔄</span> Refresh
+            </button>
         </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Priority</th>
-                <th>Target Execution</th>
-                <th>Status</th>
-                <th>Next Run</th>
-                <th>Error</th>
-                <!--th>Actions</th-->
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let item of filteredItems">
-                <td>#{{item.id}}</td>
-                <td>{{item.priority}}</td>
-                <td class="info-cell">
-                    <div class="truncate-wrapper">
-                        {{item.executionInfo}}
-                        <span class="tooltip-box">
-                            <strong>Full Execution Info:</strong><br>
-                            {{item.executionInfo}}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Priority</th>
+                    <th>Target Execution</th>
+                    <th>Status</th>
+                    <th>Next Run</th>
+                    <th>Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of filteredItems">
+                    <td class="id-cell">#{{item.id}}</td>
+                    <td>
+                        <span class="priority-label" [attr.data-priority]="item.priority">
+                            {{item.priority}}
                         </span>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge" [ngClass]="item.status">{{item.status}}</span>
-                </td>
-                <td>{{item.nextRun}}</td>
-                <td>{{item.error || 'None'}}</td>
-                <!--td>
-                    <button class="icon-btn delete" (click)="deleteSingle(item.id)">🗑️</button>
-                </td-->
-            </tr>
-        </tbody>
-    </table>
+                    </td>
+                    <td class="info-cell">
+                        <div class="truncate-wrapper">
+                            {{item.executionInfo}}
+                            <span class="tooltip-box">
+                                <strong>Full Execution Info:</strong><br>
+                                {{item.executionInfo}}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge" [ngClass]="item.status.toLowerCase()">
+                            {{item.status}}
+                        </span>
+                    </td>
+                    <td>{{item.nextRun}}</td>
+                    <td class="error-cell" [title]="item.error">
+                        {{item.error || 'None'}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
     <div *ngIf="filteredItems.length === 0 && !loading" class="empty-state">
+        <div class="empty-icon">📂</div>
         <p>Queue is currently empty.</p>
+        <small>Pending tasks will appear here automatically.</small>
+    </div>
+
+    <div *ngIf="loading" class="loading-overlay">
+        <div class="spinner"></div>
     </div>
 </div>

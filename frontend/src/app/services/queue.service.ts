@@ -31,7 +31,15 @@ export class QueueService {
   deleteItem(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/item/${id}`);
   }
-
+  getQueueStatus(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/queue/status`);
+  }
+  startQueue(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/queue/start`, {});
+  }
+  stopQueue(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/queue/stop`, {});
+  }
   deletehistItem(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/items/history/${id}`);
   }

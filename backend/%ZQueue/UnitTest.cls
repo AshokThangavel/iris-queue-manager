@@ -9,7 +9,7 @@ ClassMethod TestSingleQueue() [ Internal ]
 
 ClassMethod TestParameterValues(p1, args...) [ Internal ]
 {
-	Set ^IRIS.Temp("p1") =p1
+	Set ^IRIS.Temp("p1") =$Get(p1)
     Merge ^IRIS.Temp("args")=args
     Return 1
 }
