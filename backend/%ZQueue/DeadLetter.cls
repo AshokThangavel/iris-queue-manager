@@ -72,6 +72,17 @@ ClassMethod MoveAllDLQToQueue() As %Status
 	Return status
 }
 
+Query GetAllDLQRecords() As %SQLQuery
+{
+	SELECT %NOLOCK ID,
+	Priority,
+	QueueInfo_ClassName As ClassName,
+	QueueInfo_MethodName As MethodName,
+	QueueInfo_RoutineName As exeRoutine,
+	%ODBCOUT(CreatedAt) As CreatedAt,
+	ErrorMsg FROM %ZQueue.DeadLetter ORDER BY Priority ASC, ID DESC
+}
+
 Storage Default
 {
 <Data name="DeadLetterDefaultData">

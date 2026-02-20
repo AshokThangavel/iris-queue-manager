@@ -132,25 +132,29 @@ ClassMethod ExecuteItem(Queue As %ZQueue.QueueItem)
 
 	        Set argList = argList _ $Select(argList="":"", 1:",") _ key
     	}
-
 		If routine["$$" {
-			Set cmd = "("_argList_") s sc="_routine_"("_argList_")"
-			Xecute (cmd,argList)
-			;s x="(a,b) s sc= $$x1^as1(a,b)"
+			If argList'=""{
+				Set cmd = "s sc="_routine_"("_argList_")"
+			}
+			Else {
+				Set cmd = "s sc="_routine_"()"
+			}
 		}
 		ElseIf routine["^" {
-			Set routine = "do "_routine
-			Xecute routine
+			If argList'=""{
+				Set cmd = "d "_routine_"("_argList_")"
+			}
+			Else {
+				Set cmd = "d "_routine_"()"
+			}
 		}
 		Else {
-			Set routine = "do ^"_routine
-			Xecute routine
+			Set cmd = "do ^"_routine
+		}
+		If cmd'="" {
+			Xecute cmd
 		}
 	}
-}
-
-ClassMethod d1()
-{
 }
 
 ClassMethod ProcessRetries() [ Internal ]

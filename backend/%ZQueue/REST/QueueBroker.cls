@@ -27,13 +27,15 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 ClassMethod GetDLQItems()
 {
 	Try{
-		Set sql = "SELECT %NOLOCK ID, Priority, QueueInfo_ClassName As ClassName,QueueInfo_MethodName As MethodName, "_
-		 	"QueueInfo_RoutineName As exeRoutine,  %ODBCOUT(CreatedAt) As CreatedAt,  ErrorMsg FROM %ZQueue.DeadLetter ORDER BY Priority ASC, ID DESC"
-	    Set rset = ##class(%SQL.Statement).%ExecDirect(, sql)
-
-	     Set response = []
+	    Set rset = ##class(%ZQueue.DeadLetter).GetAllDLQRecordsFunc()
+	    Set response = []
 	    While rset.%Next() {
-		    Set exectionInfo = rset.%Get("MethodName")_"^"_rset.%Get("ClassName")
+			If rset.%Get("ClassName")="" {
+				Set exectionInfo = rset.%Get("exeRoutine")
+			}
+			Else {
+				Set exectionInfo = rset.%Get("MethodName")_"^"_rset.%Get("ClassName")
+			}
 	        Do response.%Push({
 	            "id": (rset.%Get("ID")),
 	            "executionInfo": (exectionInfo),
@@ -43,7 +45,7 @@ ClassMethod GetDLQItems()
 	    }
 	}
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
     Do ..WriteResponse(response)
@@ -52,14 +54,16 @@ ClassMethod GetDLQItems()
 
 ClassMethod GetHistoryItems()
 {
-
 	Try {
-		Set sql = "SELECT %NOLOCK ID As queueId, QueueInfo_ClassName As ClassName,QueueInfo_MethodName As MethodName, QueueInfo_RoutineName As exeRoutine,"_
-    		"%ODBCOUT(CompletionTime) As CompletionTime, ExecutionTime FROM %ZQueue.QueueHistory"
-    	Set rset = ##class(%SQL.Statement).%ExecDirect(, sql)
+    	Set rset = ##class(%ZQueue.QueueHistory).GetAllHistoryRecordsFunc()
 	    Set response = []
 	    While rset.%Next() {
-		    Set exectionInfo =rset.%Get("MethodName")_"^"_ rset.%Get("ClassName")
+			If rset.%Get("ClassName")="" {
+				Set exectionInfo = rset.%Get("exeRoutine")
+			}
+			Else {
+		    	Set exectionInfo =rset.%Get("MethodName")_"^"_ rset.%Get("ClassName")
+			}
 	        Do response.%Push({
 	            "id": (rset.%Get("queueId")),
 	            "executionInfo": (exectionInfo),
@@ -69,7 +73,7 @@ ClassMethod GetHistoryItems()
 	    }
     }
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
 	Do ..WriteResponse(response)
@@ -80,21 +84,13 @@ ClassMethod GetItems(status As %String = "") As %Status
 {
 	Set status=""
 	Try {
-	    Set %response.ContentType = "application/json"
-	    Set sql = "SELECT %NOLOCK ID As queueId, Priority,CurrentRetry, QueueInfo_ClassName As ClassName,QueueInfo_MethodName As MethodName, QueueInfo_RoutineName As exeRoutine,  %ODBCOUT(NextRunTime) As NextRunTime, Status, LastError FROM %ZQueue.QueueItem "
-
-	    Set statement = ##class(%SQL.Statement).%New()
-	    Set sc = statement.%Prepare(sql)
-	    Set rset = $Select(sc:statement.%Execute(), 1:statement.%Execute(status))
-
-	    If rset.%sqlcode {
-		    $$$ThrowSQLCODE(rset.%sqlcode,rset.%message)
-	    }
-
+	    Set rset = ##class(%ZQueue.QueueItem).GetAllQueueItemsFunc()
 	    Set response = []
 	    While rset.%Next() {
 		     Set qstatus = $Case(rset.Status,0:"Pending",1:"InProgress",2:"Retry",-1:"Completed",-2:"DeadLetter",:"Unknown")
-	        If qstatus="Retry" Set qstatus=qstatus_" (Attempt: "_rset.CurrentRetry_")"
+	        If qstatus="Retry" {
+				Set qstatus=qstatus_" (Attempt: "_rset.CurrentRetry_")"
+			}
 	        Set executionInfo=""
 	        If rset.ClassName'="" {
 	            Set executionInfo = rset.MethodName_"^"_rset.ClassName
@@ -113,7 +109,7 @@ ClassMethod GetItems(status As %String = "") As %Status
 	    }
     }
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
    	Do ..WriteResponse(response)
@@ -128,7 +124,7 @@ ClassMethod RetryDLQItem(dlqId)
 			Set response = ..GetErrorResponse($System.Status.GetErrorText(status))
 		}
 		Else {
-			Set response = {"status":"ok"}
+			Set response = ..GetStatusOk()
 		}
 	}
 	Catch ex {
@@ -139,25 +135,19 @@ ClassMethod RetryDLQItem(dlqId)
 	Return $$$OK
 }
 
-ClassMethod GetErrorResponse(pErrorMsg) [ CodeMode = expression ]
-{
-{"status":"error","message":(pErrorMsg)}
-}
-
 ClassMethod DeleteHistoryItem(pId As %Integer)
 {
 	Try {
 		Set status = ##Class(%ZQueue.QueueHistory).DeleteById(pId)
-		Set response = {}
 		If $$$ISERR(status) {
 			Set response= ..GetErrorResponse(..GetErrorText(status))
 		}
 		Else {
-			Set response.status="ok"
+			Set response = ..GetStatusOk()
 		}
 	}
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
 	Do ..WriteResponse(response)
@@ -166,27 +156,25 @@ ClassMethod DeleteHistoryItem(pId As %Integer)
 
 ClassMethod DeleteHistoryItems()
 {
+	#define ThrowGeneral(%msg) Throw ##class(%Exception.General).%New(%msg)
 	Try{
-	#dim %request As %CSP.Request
-	Set payload = {}.%FromJSON(%request.Content)
+	Set payload = ..GetContent()
 		If '$IsObject(payload) {
-			Throw ##class(%Exception.General).%New("payload is empty")
+			$$$ThrowGeneral("payload is empty")
 		}
 		If 'payload.%IsDefined("ids") {
-			Throw ##class(%Exception.General).%New("ids not found")
+			$$$ThrowGeneral("ids not found")
 		}
 		Set iter = payload.ids.%GetIterator()
 		While iter.%GetNext(,.id) {
 			Do ##Class(%ZQueue.QueueHistory).DeleteById(id)
 		}
-		Set response ={"status":"ok"}
+		Set response = ..GetStatusOk()
 	}
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
-	;
-Exit
 	Do ..WriteResponse(response)
 	Return $$$OK
 }
@@ -196,11 +184,11 @@ ClassMethod DeleteDeadLetterItem(pId As %Integer)
 	Try {
 		Set status = ##Class(%ZQueue.DeadLetter).DeleteById(pId)
 		$$$ThrowOnError(status)
-		Set response = {"status":"ok"}
+		Set response = ..GetStatusOk()
 
 	}
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
 	Do ..WriteResponse(response)
@@ -209,63 +197,59 @@ ClassMethod DeleteDeadLetterItem(pId As %Integer)
 
 ClassMethod DeleteDeadLetterItems(pId As %Integer)
 {
-	#dim %request As %CSP.Request
 	Try {
-		Set payload = {}.%FromJSON(%request.Content)
+		Set payload = ..GetContent()
 		If '$IsObject(payload) {
-			Throw ##class(%Exception.General).%New("payload is empty")
+			$$$ThrowGeneral("payload is empty")
 		}
 		If 'payload.%IsDefined("ids") {
-			Throw ##class(%Exception.General).%New("ids not found")
+			$$$ThrowGeneral("ids not found")
 		}
 		Set iter = payload.ids.%GetIterator()
 		While iter.%GetNext(,.id) {
 			Do ##Class(%ZQueue.DeadLetter).DeleteById(id)
 		}
-		Set response = {"status":"ok"}
+		Set response = ..GetStatusOk()
 	;
 	}
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
 	Do ..WriteResponse(response)
 	Return $$$OK
 }
 
-ClassMethod GetErrorText(pStatus) [ CodeMode = expression ]
-{
-$System.Status.GetErrorText(pStatus)
-}
-
 ClassMethod CreateItem() As %Status
 {
-	#dim %request As %CSP.Request
-	Try{
+	Try {
 		Set Queue = {}.%FromJSON(%request.Content)
 		If '$IsObject(Queue) {
-			Throw ##class(%Exception.General).%New("payload is empty")
+			$$$ThrowGeneral("payload is empty")
 		}
 		If '$IsObject(Queue) {
-			Throw ##class(%Exception.General).%New("Not a valid Json")
+			$$$ThrowGeneral("Not a valid Json")
 		}
 		Set className = Queue.QueueInfo.ClassName
 		If className'="" {
 			If '##class(%Dictionary.ClassDefinition).%ExistsId(className) {
 				Do ..SetStatusCode(..#HTTP422UNPROCESSABLEENTITY)
-				Throw ##class(%Exception.General).%New("Class Not exist")
+				Set response = ..GetErrorResponse("Class Not exist")
+				Quit
 			}
 			Set methodName = Queue.QueueInfo.MethodName
 			If '##class(%Dictionary.MethodDefinition).%ExistsId(className_"||"_methodName) {
 				Do ..SetStatusCode(..#HTTP422UNPROCESSABLEENTITY)
-				Throw ##class(%Exception.General).%New("Method Not exist")
+				Set response = ..GetErrorResponse("Method Not exist")
+				Quit
 			}
 		}
 		Else {
 			Set routine = Queue.QueueInfo.RoutineName
 			If '##class(%Routine).%ExistsId($Translate(routine,"^")) {
 				Do ..SetStatusCode(..#HTTP422UNPROCESSABLEENTITY)
-				Throw ##class(%Exception.General).%New("Routine Not exist")
+				Set response = ..GetErrorResponse("Routine Not exist")
+				Quit
 			}
 		}
 		Set status = ##class(%ZQueue.Queue).EnQueue(Queue, .QueueId)
@@ -274,29 +258,11 @@ ClassMethod CreateItem() As %Status
 		Set response = {"status":"ok","message":("QueueId "_QueueId)}
 	}
 	Catch ex {
-		Set response = ..GetErrorResponse(..GetErrorText(ex.AsStatus()))
+		Set response = ..GetErrorResponse(..GetErrorText(ex))
 		Do ..SetStatusCode(..#HTTP500INTERNALSERVERERROR)
 	}
 	Do ..WriteResponse(response)
 	Return $$$OK
-}
-
-ClassMethod OnHandleCorsRequest(pUrl As %String) As %Status
-{
-	#dim %response As %CSP.Response
-    // 1. Get the Origin from the request
-    Set origin = %request.Get("HTTP_ORIGIN")
-    If origin = "" Set origin = "http://localhost:8080"
-    Do ..SetResponseHeader("Access-Control-Allow-Origin",origin)
-    Do ..SetResponseHeader("Access-Control-Allow-Credentials","true")
-    Do ..SetResponseHeader("Access-Control-Allow-Methods","GET, POST, PUT, DELETE, OPTIONS")
-    Do ..SetResponseHeader("Access-Control-Allow-Headers","Origin, Content-Type, Accept, Authorization")
-    If %request.Method = "OPTIONS" {
-        Set %response.Status = "200"
-        Quit $$$OK
-    }
-
-    Quit $$$OK
 }
 
 }

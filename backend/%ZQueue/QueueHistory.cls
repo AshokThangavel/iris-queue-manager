@@ -50,6 +50,17 @@ ClassMethod GetHistoryRetainDaysLimit() [ CodeMode = expression ]
 $$$QueueHistory
 }
 
+Query GetAllHistoryRecords() As %SQLQuery
+{
+	SELECT %NOLOCK
+		OriginalID As queueId,
+		QueueInfo_ClassName As ClassName,
+		QueueInfo_MethodName As MethodName,
+		QueueInfo_RoutineName As exeRoutine,
+    	%ODBCOUT(CompletionTime) As CompletionTime, ExecutionTime
+	FROM %ZQueue.QueueHistory
+}
+
 Storage Default
 {
 <Data name="QueueHistoryDefaultData">

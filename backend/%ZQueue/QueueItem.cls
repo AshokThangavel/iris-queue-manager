@@ -149,6 +149,20 @@ ClassMethod GetNextQueueItem()
 	Return ""
 }
 
+Query GetAllQueueItems() As %SQLQuery
+{
+	SELECT %NOLOCK
+		ID As queueId,
+		Priority,CurrentRetry,
+		QueueInfo_ClassName As ClassName,
+		QueueInfo_MethodName As MethodName,
+		QueueInfo_RoutineName As exeRoutine,
+		%ODBCOUT(NextRunTime) As NextRunTime,
+		Status,
+		LastError
+	FROM %ZQueue.QueueItem
+}
+
 Storage Default
 {
 <Data name="QueueItemDefaultData">
